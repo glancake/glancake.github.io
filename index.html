@@ -19,55 +19,41 @@
 
       <div id="app" class="container">
         <card>
-          <h1 slot="header">{{hitokoto}}</h1>
-          <p slot="content">{{from}}</p>
-          <button>{{mess}}</button>
-
+          <h1 slot="header">{{sentence.name}}</h1>
+          <p slot="content">{{sentence.from}}</p>
+          <button @click="next()">{{mess}}</button>
         </card>
       </div>
     </div>
   </div>
 
+  <script src="./asset/sentence/sentence-10000.js"></script>
 
   <script src="./plugins/vue.min.js"></script>
   <script>
+
+    console.log(sentences)
 
     const app = new Vue({
       el: '#app',
       data: {
         mess: "Next",
-        hitokoto: '',
-        from: ''
+        sentence: {},
+        index: 0
       },
       mounted () {
-        this.randomSentence()
+        this.index = Math.floor(Math.random() * 10000) + 1
+        this.sentence = sentences[ this.index ]
       },
       methods: {
-        randomSentence () {
-          fetch('https://api.codelife.cc/yiyan/random?lang=cn')
-            .then(response => {
-              if (response.ok) {
-                // 请求成功，处理响应
-                return response.json()
-              } else {
-                // 请求失败，处理错误
-                throw new Error('Error: ' + response.status)
-              }
-            })
-            .then(data => {
-              // 使用响应数据
-              this.hitokoto = data.hitokoto
-              this.from = data.from
-            })
-            .catch(error => {
-              // 处理错误
-              console.error('Error: ', error)
-            })
+        next () {
+          if (this.index == 10000) {
+            this.index = 0
+          }
+          this.sentence = sentences[ this.index++ ]
         }
       }
-
     })
-
   </script>
 </body>
 
