@@ -1,60 +1,204 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GlanCake</title>
-  <link rel="stylesheet" href="./index.css">
+  <title>私人聊天室</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 380px;
+      height: 600px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      padding: 12px;
+      background: #4CAF50;
+      color: white;
+      text-align: center;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      margin: 6px 0;
+      padding: 8px 12px;
+      border-radius: 16px;
+      max-width: 70%;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    .left {
+      background: #e4e6eb;
+      align-self: flex-start;
+    }
+
+    .right {
+      background: #4CAF50;
+      color: white;
+      align-self: flex-end;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ddd;
+    }
+
+    input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-left: 8px;
+      padding: 8px 12px;
+      border-radius: 20px;
+      border: none;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    .nickname-box {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
 </head>
-
 <body>
-  <div class="blur-background">
-    <div class="blur-overlay"></div>
-    <div class="content">
-      <div class="header">
-        <img src="./images/logo-glancake-bigger.svg" class="header-logo" alt="">
-      </div>
 
-      <div id="app" class="container">
-        <card>
-          <h1 slot="header">{{sentence.name}}</h1>
-          <p slot="content">{{sentence.from}}</p>
-          <button @click="next()">{{mess}}</button>
-        </card>
-      </div>
-    </div>
+<div class="container">
+
+  <div id="nicknameBox" class="nickname-box">
+    <h3>输入昵称</h3>
+    <input id="nickname" placeholder="你的名字">
+    <button onclick="enterChat()">进入聊天</button>
   </div>
 
-  <script src="./asset/sentence/sentence-10000.js"></script>
+  <div id="chatBox" style="display:none; flex-direction:column; height:100%;">
 
-  <script src="./plugins/vue.min.js"></script>
-  <script>
+    <div class="header">
+      KMessage
+      <select id="alignMode" onchange="refreshMessages()" style="font-size:12px;">
+        <option value="split">分开显示</option>
+        <option value="left">全部左侧</option>
+        <option value="right">全部右侧</option>
+      </select>
+    </div>
 
-    console.log("打印d")
+    <div id="messages" class="messages"></div>
 
-    const app = new Vue({
-      el: '#app',
-      data: {
-        mess: "Next",
-        sentence: {},
-        index: 0
-      },
-      mounted () {
-        this.index = Math.floor(Math.random() * 10000) + 1
-        this.sentence = sentences[ this.index ]
-      },
-      methods: {
-        next () {
-          if (this.index == 10000) {
-            this.index = 0
-          }
-          this.sentence = sentences[ this.index++ ]
-        }
+    <div class="input-area">
+      <input id="msg" placeholder="输入消息">
+      <button onclick="send()">发送</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCv2ar5evzLNd-nT-QtCQxMuB0XeC7h5Is",
+    authDomain: "webchat-7f736.firebaseapp.com",
+    databaseURL: "https://webchat-7f736-default-rtdb.firebaseio.com",
+    projectId: "webchat-7f736",
+    storageBucket: "webchat-7f736.firebasestorage.app",
+    messagingSenderId: "70464338196",
+    appId: "1:70464338196:web:81ea34678979ece8dc2a01",
+    measurementId: "G-WX9FGV0C4V"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const messagesRef = ref(db, "chat");
+
+  let myName = "";
+  let allMessages = [];
+
+  window.enterChat = function() {
+    const name = document.getElementById("nickname").value.trim();
+    if (!name) return alert("请输入昵称");
+
+    myName = name;
+    document.getElementById("nicknameBox").style.display = "none";
+    document.getElementById("chatBox").style.display = "flex";
+  }
+
+  window.send = function() {
+    const input = document.getElementById("msg");
+    if (!input.value) return;
+
+    push(messagesRef, {
+      text: input.value,
+      user: myName,
+      time: Date.now()
+    });
+
+    input.value = "";
+  }
+
+  onValue(messagesRef, (snapshot) => {
+    const data = snapshot.val();
+    allMessages = data ? Object.values(data) : [];
+    refreshMessages();
+  });
+
+  window.refreshMessages = function() {
+    const mode = document.getElementById("alignMode").value;
+    const container = document.getElementById("messages");
+    container.innerHTML = "";
+
+    allMessages.forEach(msg => {
+      const div = document.createElement("div");
+      div.classList.add("message");
+
+      if (mode === "split") {
+        div.classList.add(msg.user === myName ? "right" : "left");
+      } else if (mode === "left") {
+        div.classList.add("left");
+      } else if (mode === "right") {
+        div.classList.add("right");
       }
-    })
-  </script>
-</body>
 
+      div.innerHTML = "<strong>" + msg.user + ":</strong> " + msg.text;
+      container.appendChild(div);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  }
+</script>
+
+</body>
 </html>
