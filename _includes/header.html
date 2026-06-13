@@ -1,0 +1,15 @@
+<header class="site-header">
+  <div class="header-inner">
+    <a class="site-logo" href="{{ '/' | relative_url }}">
+      <img src="{{ '/images/logo-glancake-bigger.svg' | relative_url }}" alt="{{ site.title }}" width="32" height="32">
+      <span class="site-name">{{ site.title }}</span>
+    </a>
+    <nav class="site-nav">
+      {% for item in site.nav %}
+      <a href="{{ item.url | relative_url }}" {% if page.url == item.url %}class="active"{% endif %}>
+        {{ item.title }}
+      </a>
+      {% endfor %}
+    </nav>
+  </div>
+</header>

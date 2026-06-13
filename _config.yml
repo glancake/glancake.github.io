@@ -1,0 +1,81 @@
+# ────────────────────────────────────
+# 个人博客配置
+# ────────────────────────────────────
+
+title: Glancake's Blog
+tagline: 代码、思考与生活
+description: 个人技术博客，记录学习与思考。
+author:
+  name: Glancake
+  email: # 可选，留空则不显示
+  avatar: /images/logo-glancake-bigger.svg
+
+baseurl: ""
+url: "https://glancake.github.io"
+
+# 语言与时区
+lang: zh-CN
+timezone: Asia/Shanghai
+
+# ── 构建设置 ──────────────────────────
+markdown: kramdown
+highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: "highlight"
+    span:
+      line_numbers: false
+
+# 分页
+paginate: 10
+paginate_path: "/page/:num/"
+
+# 永久链接
+permalink: /posts/:year/:month/:day/:title/
+
+# ── 插件 ──────────────────────────────
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-paginate
+  - jekyll-sitemap
+
+feed:
+  path: /feed.xml
+
+# ── 导航 ──────────────────────────────
+nav:
+  - title: 首页
+    url: /
+  - title: 关于
+    url: /about/
+
+# ── 社交链接 ──────────────────────────
+social:
+  github: glancake
+
+# ── 默认 Front Matter ─────────────────
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: post
+      comments: false
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: page
+
+# ── 排除文件 ──────────────────────────
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - README.md
+  - LICENSE

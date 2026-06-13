@@ -1,0 +1,33 @@
+---
+layout: default
+---
+
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">{{ page.title }}</h1>
+    <div class="post-meta">
+      <time datetime="{{ page.date | date_to_xmlschema }}">
+        {{ page.date | date: "%Y 年 %m 月 %d 日" }}
+      </time>
+      {% if page.tags %}
+      <span class="post-tags">
+        {% for tag in page.tags %}
+        <span class="post-tag">{{ tag }}</span>
+        {% endfor %}
+      </span>
+      {% endif %}
+      <span class="post-readtime">
+        {% assign words = content | number_of_words %}
+        {% if words < 250 %} 阅读 1 分钟 {% else %} 阅读 {{ words | divided_by: 250 | plus: 1 }} 分钟 {% endif %}
+      </span>
+    </div>
+  </header>
+
+  <div class="post-content">
+    {{ content }}
+  </div>
+
+  <footer class="post-footer">
+    <a class="back-home" href="{{ '/' | relative_url }}">← 返回首页</a>
+  </footer>
+</article>
