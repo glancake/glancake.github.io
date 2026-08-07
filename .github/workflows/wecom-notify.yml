@@ -1,0 +1,77 @@
+name: 企微消息推送 (WeCom Notify)
+
+# 在 push 到 main（即博客内容更新/部署）时，向企业微信群机器人推送通知
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wecom-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 构建并发送企微通知
+        # 未配置 WECHAT_WEBHOOK 秘密时自动跳过，工作流不会报错
+        if: ${{ secrets.WECHAT_WEBHOOK != '' }}
+        env:
+          WEBHOOK: ${{ secrets.WECHAT_WEBHOOK }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -e
+          SITE_URL="https://glancake.github.io"
+          COMMIT_URL="https://github.com/${REPO}/commit/${SHA}"
+
+          # 头部
+          {
+            echo "## 📢 Glancake's Blog 有新动态"
+            echo "> 推送者：**${ACTOR}**"
+          } > content.md
+
+          # 检测本次推送新增的文章（_posts/*.md）
+          if [ "${BEFORE}" != "0000000000000000000000000000000000000000" ]; then
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              title=$(grep -m1 '^title:' "$f" | sed "s/^title:[[:space:]]*//; s/^[\"']//; s/[\"']$//")
+              [ -n "$title" ] && echo "📝 新文章：《${title}》" >> content.md
+            done < <(git diff --name-only "${BEFORE}" "${AFTER}" -- '_posts/*.md' 2>/dev/null || true)
+          fi
+
+          # 提交摘要（最多 5 条）
+          COMMITS=$(git log --pretty=format:"• %s" "${BEFORE}".."${AFTER}" 2>/dev/null | head -5 || true)
+          if [ -n "${COMMITS}" ]; then
+            {
+              echo ""
+              echo "**本次提交：**"
+              echo "${COMMITS}"
+            } >> content.md
+          fi
+
+          # 页脚链接
+          {
+            echo ""
+            echo "> [查看站点](${SITE_URL}) · [查看提交](${COMMIT_URL})"
+          } >> content.md
+
+          CONTENT=$(cat content.md)
+          jq -n --arg c "${CONTENT}" '{msgtype:"markdown",markdown:{content:$c}}' > payload.json
+
+          echo "----- 即将发送的内容 -----"
+          cat content.md
+          echo "--------------------------"
+
+          curl -s -o resp.json -w "HTTP %{http_code}\n" -X POST "${WEBHOOK}" \
+            -H 'Content-Type: application/json' -d @payload.json
+          echo "企微返回："
+          cat resp.json
