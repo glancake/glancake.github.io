@@ -19,8 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: 构建并发送企微通知
-        # 未配置 WECHAT_WEBHOOK 秘密时自动跳过，工作流不会报错
-        if: ${{ secrets.WECHAT_WEBHOOK != '' }}
+        # 未配置 WECHAT_WEBHOOK 秘密时在脚本内自动跳过，工作流不会报错
         env:
           WEBHOOK: ${{ secrets.WECHAT_WEBHOOK }}
           BEFORE: ${{ github.event.before }}
@@ -30,6 +29,10 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           set -e
+          if [ -z "${WEBHOOK}" ]; then
+            echo "⚠️ 未配置 WECHAT_WEBHOOK 秘密，跳过推送。"
+            exit 0
+          fi
           SITE_URL="https://glancake.github.io"
           COMMIT_URL="https://github.com/${REPO}/commit/${SHA}"
 
